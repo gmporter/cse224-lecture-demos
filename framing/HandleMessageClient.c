@@ -22,6 +22,12 @@ void HandleMessageClient(int clntSocket)
 		int numRecvBytes = recv(clntSocket, recvbuf, RCVBUFSIZE, 0);
 
 		if (numRecvBytes < 0) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				fprintf(stderr, "Client timed out, closing connection\n");
+				close(clntSocket);
+				return;
+			}
+
 			perror("recv");
 			close(clntSocket);
 			return;

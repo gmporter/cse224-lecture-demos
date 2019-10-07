@@ -64,8 +64,14 @@ int main(int argc, char *argv[])
 	freeaddrinfo(servinfo);
 
     /* Mark the socket so it will listen for incoming connections */
-    if (listen(servSock, MAXPENDING) < 0)
+    if (listen(servSock, MAXPENDING) < 0) {
         DieWithSystemMessage("listen() failed");
+	}
+
+	int optval = 1;
+	if (setsockopt(servSock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) != 0) {
+		DieWithSystemMessage("setsockopt()");
+	}
 
     for (;;) /* Run forever */
     {
@@ -80,6 +86,14 @@ int main(int argc, char *argv[])
         /* clntSock is connected to a client! */
 
         printf("Handling client %s\n", inet_ntoa(msgClntAddr.sin_addr));
+
+		struct timeval timeout;
+		timeout.tv_sec = 5;
+		timeout.tv_usec = 0;
+
+		if (setsockopt(clntSock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+			DieWithSystemMessage("setsockopt()");
+		}
 
         HandleMessageClient(clntSock);
     }
